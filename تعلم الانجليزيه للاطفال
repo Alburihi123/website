@@ -1,0 +1,104 @@
+import json
+import os
+import tkinter as tk
+from tkinter import messagebox, filedialog
+import pyttsx3
+
+# Initialize text-to-speech engine
+engine = pyttsx3.init()
+
+# Load lessons from a JSON file
+def load_lessons():
+    if not os.path.exists("lessons.json"):
+        # Default lessons
+        lessons = {
+            "Animals": {"cat": "🐱", "dog": "🐶", "cow": "🐮", "lion": "🦁"},
+            "Colors": {"red": "🔴", "blue": "🔵", "green": "🟢", "yellow": "🟡"},
+            "Numbers": {"one": "1", "two": "2", "three": "3", "four": "4"},
+        }
+        with open("lessons.json", "w") as f:
+            json.dump(lessons, f)
+    else:
+        with open("lessons.json", "r") as f:
+            lessons = json.load(f)
+    return lessons
+
+# Speak a word using TTS
+def speak_word(word):
+    engine.say(word)
+    engine.runAndWait()
+
+# Game: Match the word to the picture
+def match_game(category):
+    def check_answer():
+        if entry.get().lower() == word:
+            messagebox.showinfo("Correct!", "Well done! 🎉")
+        else:
+            messagebox.showerror("Wrong", f"Try again! The correct answer is '{word}'.")
+        window.destroy()
+
+    word, emoji = list(lessons[category].items())[0]
+    window = tk.Toplevel()
+    window.title(f"Match the {category}")
+    label = tk.Label(window, text=f"What is this? {emoji}", font=("Arial", 24))
+    label.pack(pady=20)
+    entry = tk.Entry(window, font=("Arial", 18))
+    entry.pack(pady=10)
+    button = tk.Button(window, text="Submit", command=check_answer, font=("Arial", 14))
+    button.pack(pady=10)
+
+# Main application
+class PanchApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Panch - English Learning for Kids")
+        self.root.geometry("500x400")
+        self.lessons = load_lessons()
+
+        # Welcome message
+        label = tk.Label(root, text="Welcome to Panch! 🎉", font=("Arial", 24))
+        label.pack(pady=20)
+
+        # Lesson buttons
+        for category in self.lessons:
+            button = tk.Button(
+                root,
+                text=f"Learn {category}",
+                command=lambda c=category: self.open_lesson(c),
+                font=("Arial", 16),
+            )
+            button.pack(pady=10)
+
+    # Open a lesson
+    def open_lesson(self, category):
+        lesson_window = tk.Toplevel(self.root)
+        lesson_window.title(f"Learn {category}")
+        lesson_window.geometry("400x300")
+
+        for word, emoji in self.lessons[category].items():
+            frame = tk.Frame(lesson_window)
+            frame.pack(pady=5)
+            label = tk.Label(frame, text=f"{word} {emoji}", font=("Arial", 18))
+            label.pack(side=tk.LEFT)
+            button = tk.Button(
+                frame,
+                text="🔊",
+                command=lambda w=word: speak_word(w),
+                font=("Arial", 14),
+            )
+            button.pack(side=tk.RIGHT)
+
+        # Add a game button
+        game_button = tk.Button(
+            lesson_window,
+            text="Play a Game 🎮",
+            command=lambda: match_game(category),
+            font=("Arial", 16),
+        )
+        game_button.pack(pady=20)
+
+# Run the application
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = PanchApp(root)
+    root.mainloop()
